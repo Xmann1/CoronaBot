@@ -1,1 +1,1 @@
-test token
+[ENTER YOUR TOKEN HERE]
