@@ -4,7 +4,6 @@ import sys
 import os
 
 token = sys.argv[1]
-print(token)
 
 
 class CoronaBot(discord.Client):
