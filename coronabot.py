@@ -35,6 +35,11 @@ class CoronaBot(discord.Client):
     async def event_on_message(self, msg):
         self.log_message(msg)
 
+        if msg.guild.id == 461648348622094347:
+            if msg.channel.id != 461648348622094349:
+                self.log("Skipping, in MC BOYZ and not general")
+                return
+
         corona_role = discord.utils.get(msg.guild.roles, name="Corona infected")
         if corona_role is None:
             self.log("No corona role detected in server, attempting to create one")
