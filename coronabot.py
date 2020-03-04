@@ -89,6 +89,9 @@ class CoronaBot(discord.Client):
                         else:
                             self.log("Infection has died in this message")
 
+        if self.user.mention in msg.content:
+            await msg.channel.send("Bruh")
+
     def log(self, message, end="\n"):
         start = datetime.datetime.now().strftime("<%d/%m/%Y %H:%M:%S> ")
         print(message)
