@@ -1,8 +1,10 @@
 import datetime
 import discord
+import sys
 import os
 
-token = os.getenv("BOT_TOKEN")
+token = sys.argv[1]
+print(token)
 
 
 class CoronaBot(discord.Client):
