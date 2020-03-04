@@ -1,5 +1,6 @@
 import datetime
 import discord
+import random
 import sys
 import os
 
@@ -13,7 +14,8 @@ class CoronaBot(discord.Client):
         self.permission_denied_warned_servers = []
         self.corona_emoji = "<:corona:684132221077946401>"
         self.protected_message_contents = ["(This message is not infectious)"]
-        self.max_infection_time = 10
+        self.max_infection_time = 600
+        self.infectious_message_delay = 3600  # This means by one hour there is a 50/50 chance of an infectious message
         self.log_file = "./log.txt"
 
         self.bind_events()
@@ -52,21 +54,27 @@ class CoronaBot(discord.Client):
                 await msg.channel.send("Corona has been detected in this server")
 
         if corona_role is not None:
-            author_has_corona = msg.author in corona_role.members
-            if not author_has_corona:
-                latest_messages = []
-                self.log("  Earlier messages:")
-                async for earlier_message in msg.channel.history(limit=3):
-                    self.log_message(earlier_message, prefix="  > ")
-                    latest_messages.append(earlier_message)
+            latest_messages = []
 
-                preceding_message = latest_messages[1]
-                preceding_author = preceding_message.author
+            async for earlier_message in msg.channel.history(limit=3):
+                latest_messages.append(earlier_message)
+
+            preceding_message = latest_messages[1]
+            preceding_author = preceding_message.author
+            preceding_author_is_me = self.user.id == preceding_author.id
+
+            author_has_corona = msg.author in corona_role.members
+
+            seconds_passed_since_preceding_message = msg.created_at.timestamp() - preceding_message.created_at.timestamp()
+
+            if not author_has_corona:
+                self.log("  Earlier messages:")
+
+                for earlier_message in latest_messages:
+                    self.log_message(earlier_message, prefix="  > ")
 
                 self.log(f"    Last message:")
                 self.log_message(preceding_message, prefix="  > ")
-
-                preceding_author_is_me = self.user.id == preceding_author.id
 
                 if preceding_author_is_me and not self.is_infectious(preceding_message.content):
                     self.log("Last message is by me and is not infectious")
@@ -76,9 +84,7 @@ class CoronaBot(discord.Client):
                     if preceding_author_has_corona:
                         self.log("Preceding author has corona")
 
-                        seconds_passed_since_preceding_message = msg.created_at.timestamp() - preceding_message.created_at.timestamp()
-
-                        self.log(f"{seconds_passed_since_preceding_message} seconds have passed since preceding message")
+                        self.log(f"{round(seconds_passed_since_preceding_message, 0)} seconds have passed since preceding message")
 
                         if seconds_passed_since_preceding_message < self.max_infection_time:
                             self.log("USER GOT INFECTED!")
@@ -89,19 +95,34 @@ class CoronaBot(discord.Client):
                         else:
                             self.log("Infection has died in this message")
 
-        if str(self.user.id) in msg.content:
-            await msg.channel.send("Bruh")
+            if not msg.author.id == self.user.id:
+                n = self.infectious_message_delay // seconds_passed_since_preceding_message
+                num = random.randint(0, n)
+
+                self.log(f"Chance of random message: 1/{int(n)} number generated: {num}")
+
+                if num == 0:
+                    await msg.channel.send(":wave:")
+
+        try:
+            if str(self.user.id) in msg.content:
+                await msg.channel.send("Bruh")
+        except UnicodeDecodeError:
+            pass
 
     def log(self, message, end="\n"):
         start = datetime.datetime.now().strftime("<%d/%m/%Y %H:%M:%S> ")
         print(message)
         if self.log_file:
             with open(self.log_file, "a") as fa:
-                fa.write(start + message + end)
+                for char in start + message + end:
+                    try:
+                        fa.write(char)
+                    except UnicodeDecodeError:
+                        pass
 
     def is_infectious(self, message_content):
         for protected_message_content in self.protected_message_contents:
-            self.log(protected_message_content, message_content)
             if protected_message_content in message_content:
                 return False
 
