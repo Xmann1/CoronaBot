@@ -103,8 +103,7 @@ class CoronaBot(discord.Client):
 
         return True
 
-    @staticmethod
-    def log_message(msg, prefix=""):
+    def log_message(self, msg, prefix=""):
         if msg.guild:
             if msg.author.display_name != msg.author.name:
                 self.log(f"{prefix}[{msg.guild.name}/{msg.channel.name}] {msg.author.name}#{msg.author.discriminator} ('{msg.author.display_name}'): {msg.content}")
